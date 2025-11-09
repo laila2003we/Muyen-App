@@ -21,14 +21,17 @@ function useUpdateCurrentUserEffect() {
     async function createUser() {
       setIsCreatingUser(true);
       try {
-        await updateCurrentUser();
+        await updateCurrentUser({
+          name: user?.profile.name,
+          email: user?.profile.email,
+        });
         setUserCreated(true);
       } finally {
         setIsCreatingUser(false);
       }
     }
     createUser();
-  }, [isAuthenticated, updateCurrentUser, sub]);
+  }, [isAuthenticated, updateCurrentUser, sub, user?.profile.name, user?.profile.email]);
 
   return { isCreatingUser, userCreated };
 }

@@ -1,33 +1,45 @@
-import { ConvexError } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+import { ConvexError } from "convex/values";
 
 export const updateCurrentUser = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    disabilityType: v.optional(v.string()),
+    userType: v.optional(v.string()),
+    skills: v.optional(v.array(v.string())),
+    location: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new ConvexError({
-        code: "UNAUTHENTICATED",
         message: "User not logged in",
+        code: "UNAUTHENTICATED",
       });
     }
 
-    // Check if we've already stored this identity before.
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
         q.eq("tokenIdentifier", identity.tokenIdentifier),
       )
       .unique();
-    if (user !== null) {
-      return user._id;
+
+    if (user) {
+      await ctx.db.patch(user._id, args);
+    } else {
+      await ctx.db.insert("users", {
+        tokenIdentifier: identity.tokenIdentifier,
+        name: args.name,
+        email: args.email,
+        disabilityType: args.disabilityType,
+        userType: args.userType,
+        skills: args.skills,
+        location: args.location,
+      });
     }
-    // If it's a new identity, create a new User.
-    return await ctx.db.insert("users", {
-      name: identity.name,
-      email: identity.email,
-      tokenIdentifier: identity.tokenIdentifier,
-    });
   },
 });
 
@@ -36,17 +48,14 @@ export const getCurrentUser = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      throw new ConvexError({
-        code: "UNAUTHENTICATED",
-        message: "Called getCurrentUser without authentication present",
-      });
+      return null;
     }
-    const user = await ctx.db
+
+    return await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
         q.eq("tokenIdentifier", identity.tokenIdentifier),
       )
       .unique();
-    return user;
   },
 });
