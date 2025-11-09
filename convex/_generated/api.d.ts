@@ -8,6 +8,10 @@
  * @module
  */
 
+import type * as events from "../events.js";
+import type * as jobs from "../jobs.js";
+import type * as places from "../places.js";
+import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
 import type {
@@ -25,6 +29,10 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  events: typeof events;
+  jobs: typeof jobs;
+  places: typeof places;
+  seed: typeof seed;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
